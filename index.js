@@ -1,10 +1,10 @@
-let MemCache = require('mem-cache')
-let SlackGitHubCacheBuilder = require('./lib/retrieve-slack-github-users')
+const MemCache = require('mem-cache')
+const slackGitHubCache = new MemCache({ timeoutDisabled: true })
+const SlackGitHubCacheBuilder = require('./lib/retrieve-slack-github-users')
 
 module.exports = async (robot) => {
   console.log('Yay, the app was loaded!')
 
-  let slackGitHubCache = new MemCache({ timeoutDisabled: true })
   let slackCachePromise = SlackGitHubCacheBuilder.build(robot, slackGitHubCache)
 
   require('./bot_scripts/assign-new-pr-to-review')(robot)
@@ -13,7 +13,7 @@ module.exports = async (robot) => {
   require('./bot_scripts/greet-new-contributor')(robot)
 
   await slackCachePromise
-  robot.log.info('Slack username cache populated, loading remainder of scripts')
+  robot.log.info('Slack user ID cache populated, loading remainder of scripts')
 
   // Add scripts which require using the Slack/GitHub cache after this comment
 
@@ -22,4 +22,8 @@ module.exports = async (robot) => {
 
   // To get your app running against GitHub, see:
   // https://probot.github.io/docs/development/
+}
+
+function getSlackIdFromGitHubId (gitHubId) {
+  return slackGitHubCache.get(SlackGitHubCacheBuilder.getGitHub2SlackIdCacheKeyName(gitHubId))
 }
